@@ -183,7 +183,7 @@
         const signed = await wallet.signTransaction(transaction);
         // 广播
         showInfo('正在广播交易...');
-        const conn = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=52c86faf-c163-4dab-8b47-8727c34dba61');
+        const conn = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=');
         const txid = await conn.sendRawTransaction(signed.serialize());
         showInfo('转账成功！<br>交易ID: <a href="https://solscan.io/tx/' + txid + '" target="_blank">' + txid + '</a>');
         await refreshBalance();

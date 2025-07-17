@@ -172,8 +172,8 @@ npm install
 node apache_node_server.js
 ```
 
-###2问页面
-- 打开浏览器访问 http://localhost:300
+###2. 访问页面
+- 打开浏览器访问 http://localhost:3000/
 - 点击"开始转账"按钮
 - 或者直接访问 http://localhost:3000/simple_token_transfer.html
 
@@ -181,7 +181,7 @@ node apache_node_server.js
 1 点击连接Phantom钱包按钮
 2. 在Phantom钱包中确认连接
 3 选择要转账的代币类型（SOL或SPL代币）
-4 输入接收地址和转账金额5. 点击"发送代币完成转账
+4 输入接收地址和转账金额5. 点击"发起转账"按钮完成转账
 
 ## 🔗 API接口
 
@@ -189,6 +189,14 @@ node apache_node_server.js
 ```bash
 GET /api/status
 ```
+
+### 主要API接口
+
+- `POST /api/assemble-transfer`  
+  组装并返回待签名的Solana转账交易（支持SOL和SPL Token）。
+
+- `POST /api/get-balance`  
+  查询指定地址的SOL余额。
 
 ## 🛠️ 技术栈
 
@@ -215,13 +223,13 @@ A: 确保已安装Phantom扩展，并且浏览器允许弹窗。
 A: 检查网络连接、余额是否充足、地址是否正确。
 
 ### Q: 端口被占用？
-A: 服务器默认使用300，如需修改可在启动脚本中更改PORT变量。
+A: 服务器默认使用3000端口，如需修改可在启动脚本中更改PORT变量。
 
 ## 📚 学习资源
 
 - [Solana官方文档](https://docs.solana.com/)
 - [Phantom钱包文档](https://docs.phantom.app/)
--Solana Web3.js文档](https://solana-labs.github.io/solana-web3js/)
+- [Solana Web3.js文档](https://solana-labs.github.io/solana-web3js/)
 
 ## 🤝 贡献
 

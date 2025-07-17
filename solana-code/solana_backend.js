@@ -29,7 +29,7 @@ app.post('/api/assemble-transfer', async (req, res) => {
     if (!from || !to || !amount) return res.status(400).json({ error: 'Missing params' });
 
     console.log('正在连接 Solana 节点...');
-    const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=52c86faf-c163-4dab-8b47-8727c34dba61');
+    const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=');
     
     console.log('正在获取 blockhash...');
     const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
@@ -87,7 +87,7 @@ app.post('/api/get-balance', async (req, res) => {
   try {
     const { address } = req.body;
     if (!address) return res.status(400).json({ error: 'Missing address' });
-    const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=52c86faf-c163-4dab-8b47-8727c34dba61');
+    const connection = new Connection('https://mainnet.helius-rpc.com/?api-key=');
     const bal = await connection.getBalance(new PublicKey(address));
     res.json({ balance: bal });
   } catch (e) {

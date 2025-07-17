@@ -47,7 +47,6 @@ echo.
 echo 🌐 启动服务器...
 echo    服务器地址: http://localhost:%PORT%
 echo    主页: http://localhost:%PORT%/
-echo    Buffer测试: http://localhost:%PORT%/buffer_test.html
 echo    转账页面: http://localhost:%PORT%/simple_token_transfer.html
 echo.
 echo 按Ctrl+C 停止服务器
