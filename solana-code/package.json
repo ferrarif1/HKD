@@ -1,0 +1,32 @@
+{
+  "name": "solana-transfer-app",
+  "version": "1.0.0",
+  "description": "Solana代币转账应用 - 前端HTML + 后端Node.js",
+  "main": "apache_node_server.js",
+  "scripts": {
+    "start": "node apache_node_server.js",
+    "dev": "nodemon apache_node_server.js"
+  },
+  "keywords": [
+    "solana",
+    "blockchain",
+    "cryptocurrency",
+    "transfer",
+    "phantom",
+    "wallet"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/spl-token": "^0.4.0",
+    "@solana/web3.js": "^1.98.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

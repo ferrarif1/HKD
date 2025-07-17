@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Solana Phantom 钱包转账 Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+    .container { max-width: 420px; margin: 40px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 12px #0001; padding: 32px; }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 18px; font-weight: bold; }
+    input, select { width: 100%; padding: 8px; margin-top: 6px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; }
+    button { margin-top: 24px; width: 100%; padding: 12px; background: #6c47ff; color: #fff; border: none; border-radius: 6px; font-size: 1.1em; cursor: pointer; }
+    button:disabled { background: #aaa; }
+    .info, .error { margin-top: 18px; padding: 10px; border-radius: 5px; }
+    .info { background: #e7f7e7; color: #1a7f1a; }
+    .error { background: #ffeaea; color: #c00; }
+    .row { display: flex; gap: 8px; }
+    .row > * { flex: 1; }
+    .small { font-size: 0.95em; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Solana Phantom 钱包转账 Demo</h2>
+    <div id="wallet-section">
+      <button id="connect-btn">连接 Phantom 钱包</button>
+      <div id="wallet-info" style="display:none;">
+        <div>钱包地址：<span id="wallet-address"></span></div>
+        <div>余额：<span id="wallet-balance"></span></div>
+      </div>
+    </div>
+    <form id="transfer-form" style="display:none;">
+      <label>收款地址
+        <input id="toAddress" type="text" placeholder="请输入收款地址" required />
+      </label>
+      <label>转账代币
+        <select id="tokenSelect">
+          <option value="SOL">SOL</option>
+          <option value="USDC">USDC</option>
+          <option value="USDT">USDT</option>
+          <option value="CUSTOM">自定义 Mint</option>
+        </select>
+      </label>
+      <label id="mintLabel" style="display:none;">自定义 Mint 地址
+        <input id="tokenMint" type="text" placeholder="输入自定义 SPL Token Mint 地址" />
+      </label>
+      <label>转账数量
+        <input id="amount" type="number" min="0" step="any" placeholder="请输入数量" required />
+        <span class="small" id="decimals-tip">SOL: 1 SOL = 1e9 lamports</span>
+      </label>
+      <button type="submit" id="send-btn">发起转账</button>
+    </form>
+    <div id="result" class="info" style="display:none;"></div>
+    <div id="error" class="error" style="display:none;"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.92.1/lib/index.iife.min.js"></script>
+  <script>
+    // 常用 SPL Token Mint
+    const MINTS = {
+      SOL: 'So11111111111111111111111111111111111111112',
+      USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    };
+    const DECIMALS = {
+      SOL: 9,
+      USDC: 6,
+      USDT: 6,
+      CUSTOM: 6, // 默认6位
+    };
+    let currentDecimals = 9;
+    let currentMint = MINTS.SOL;
+
+    // UI 相关
+    const connectBtn = document.getElementById('connect-btn');
+    const walletInfo = document.getElementById('wallet-info');
+    const walletAddrSpan = document.getElementById('wallet-address');
+    const walletBalanceSpan = document.getElementById('wallet-balance');
+    const transferForm = document.getElementById('transfer-form');
+    const tokenSelect = document.getElementById('tokenSelect');
+    const mintLabel = document.getElementById('mintLabel');
+    const tokenMintInput = document.getElementById('tokenMint');
+    const amountInput = document.getElementById('amount');
+    const decimalsTip = document.getElementById('decimals-tip');
+    const resultDiv = document.getElementById('result');
+    const errorDiv = document.getElementById('error');
+
+    // 钱包连接
+    let wallet = null;
+    let publicKey = null;
+
+    connectBtn.onclick = async () => {
+      if (!window.solana || !window.solana.isPhantom) {
+        alert('请先安装 Phantom 钱包插件');
+        return;
+      }
+      try {
+        const resp = await window.solana.connect();
+        wallet = window.solana;
+        publicKey = resp.publicKey;
+        walletAddrSpan.textContent = publicKey.toString();
+        walletInfo.style.display = '';
+        connectBtn.style.display = 'none';
+        transferForm.style.display = '';
+        await refreshBalance();
+      } catch (e) {
+        alert('钱包连接失败: ' + e.message);
+      }
+    };
+
+    async function refreshBalance() {
+      if (!publicKey) return;
+      try {
+        const resp = await fetch('http://localhost:3001/api/get-balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: publicKey.toString() }),
+        });
+        const { balance, error } = await resp.json();
+        if (error) throw new Error(error);
+        walletBalanceSpan.textContent = (balance / 1e9).toFixed(4) + ' SOL';
+      } catch (e) {
+        walletBalanceSpan.textContent = '获取失败';
+        alert('钱包连接失败: ' + e);
+      }
+    }
+
+    // 代币选择
+    tokenSelect.onchange = () => {
+      const val = tokenSelect.value;
+      if (val === 'CUSTOM') {
+        mintLabel.style.display = '';
+        currentDecimals = 6;
+        currentMint = '';
+        decimalsTip.textContent = '自定义 SPL Token，默认6位小数';
+      } else {
+        mintLabel.style.display = 'none';
+        currentDecimals = DECIMALS[val];
+        currentMint = MINTS[val];
+        decimalsTip.textContent = val + ': ' + currentDecimals + '位小数';
+      }
+    };
+
+    // 表单提交
+    transferForm.onsubmit = async (e) => {
+      e.preventDefault();
+      hideMsg();
+      if (!wallet || !publicKey) return showError('请先连接钱包');
+      const to = document.getElementById('toAddress').value.trim();
+      let mint = currentMint;
+      if (tokenSelect.value === 'CUSTOM') {
+        mint = tokenMintInput.value.trim();
+        if (!mint) return showError('请输入自定义 Mint 地址');
+      }
+      let amount = parseFloat(amountInput.value);
+      if (!amount || amount <= 0) return showError('请输入正确的数量');
+      // 转最小单位
+      const decimals = tokenSelect.value === 'SOL' ? 9 : currentDecimals;
+      const sendAmount = Math.round(amount * Math.pow(10, decimals));
+      // 组装参数
+      const body = {
+        from: publicKey.toString(),
+        to,
+        amount: sendAmount,
+        tokenMint: tokenSelect.value === 'SOL' ? MINTS.SOL : mint,
+      };
+      // 调用后端
+      try {
+        showInfo('正在请求后端组装交易...');
+        const resp = await fetch('http://localhost:3001/api/assemble-transfer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const { tx, error } = await resp.json();
+        if (error) return showError('后端错误: ' + error);
+        // 反序列化
+        const transaction = solanaWeb3.Transaction.from(
+          Uint8Array.from(atob(tx), c => c.charCodeAt(0))
+        );
+        // Phantom 钱包签名
+        showInfo('请在 Phantom 钱包弹窗中签名...');
+        const signed = await wallet.signTransaction(transaction);
+        // 广播
+        showInfo('正在广播交易...');
+        const conn = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=52c86faf-c163-4dab-8b47-8727c34dba61');
+        const txid = await conn.sendRawTransaction(signed.serialize());
+        showInfo('转账成功！<br>交易ID: <a href="https://solscan.io/tx/' + txid + '" target="_blank">' + txid + '</a>');
+        await refreshBalance();
+      } catch (err) {
+        showError('转账失败: ' + (err.message || err));
+      }
+    };
+
+    function showInfo(msg) {
+      resultDiv.innerHTML = msg;
+      resultDiv.style.display = '';
+      errorDiv.style.display = 'none';
+    }
+    function showError(msg) {
+      errorDiv.textContent = msg;
+      errorDiv.style.display = '';
+      resultDiv.style.display = 'none';
+    }
+    function hideMsg() {
+      resultDiv.style.display = 'none';
+      errorDiv.style.display = 'none';
+    }
+
+   
+  </script>
+</body>
+</html> 
